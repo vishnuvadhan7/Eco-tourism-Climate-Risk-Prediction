@@ -92,18 +92,14 @@ Real time monitoring with IoT & sensors.
 ## 🚀 How to Run
 1. Clone repo:
    ```bash
-   git clone https://github.com/your-username/eco-tourism-vulnerability.git
+   git clone https://github.com/vishnuvadhan7/Eco-tourism-Climate-Risk-Prediction.git
    cd eco-tourism-vulnerability
    ```
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Run the notebook or script for training:
+2. Run the notebook or script for training:
    ```bash
    jupyter notebook
    ```
-4. For dashboard (if implemented):
+3. For dashboard (if implemented):
    ```bash
    streamlit run app.py
    ```
