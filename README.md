@@ -1,4 +1,4 @@
-# 🌍 Eco-Tourism Vulne## 🎯 Objectives
+#  Eco-Tourism Vulne## 🎯 Objectives
 - Perform EDA to explore climate and tourism risk factors.
 - Preprocess and clean the dataset.
 - Train supervised ML models (Regression/Classification) for risk prediction.
@@ -12,12 +12,6 @@ Geospatial visualization dashboard.
 Policy level insights for sustainable eco tourism.
 
 ---
-
-## 🌱 Applications
-Governments & Policymakers → prioritize conservation funding.
-Tourism Industry → sustainable tourism planning.
-Researchers → analyze climate impact on biodiversity.
-Communities → early warning system for high risk eco sites.ing
 
 ## 📌 Project Overview
 This project applies **AI/ML techniques** to assess the **vulnerability of eco-tourism sites** under climate risks. Using the [Ecotourism Climate Risk Dataset (Kaggle)](https://www.kaggle.com/datasets/programmer3/ecotourism-climate-risk-dataset/data), the model analyzes factors like **biodiversity, air quality, flood risk, elevation, and human activity** to predict vulnerability scores and identify high-risk sites.
@@ -73,7 +67,7 @@ Perform EDA to explore climate and tourism risk factors.
 
 ---
 
-## 🌱 Applications
+##  Applications
 - **Governments & Policymakers** → prioritize conservation funding.
 - **Tourism Industry** → sustainable tourism planning.
 - **Researchers** → analyze climate impact on biodiversity.
