@@ -78,8 +78,8 @@ This creates compressed model files suitable for Vercel's size limits.
    - **Framework Preset**: Other
    - **Root Directory**: `./` (leave default)
    - **Build Command**: Leave empty
-   - **Output Directory**: `public`
-   - **Install Command**: `pip install -r requirements.txt`
+   - **Output Directory**: Leave empty
+   - **Install Command**: Leave empty (auto-detected)
 
 4. **Environment Variables** (if needed):
    - Add any environment variables in the Environment Variables section
