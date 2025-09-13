@@ -1,13 +1,15 @@
 {
   "version": 2,
-  "functions": {
-    "api/predict.py": {
-      "maxDuration": 30
+  "builds": [
+    {
+      "src": "api/*.py",
+      "use": "@vercel/python"
     },
-    "api/health.py": {
-      "maxDuration": 10
+    {
+      "src": "public/**/*",
+      "use": "@vercel/static"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
@@ -17,6 +19,5 @@
       "src": "/(.*)",
       "dest": "/public/$1"
     }
-  ],
-  "outputDirectory": "public"
+  ]
 }
