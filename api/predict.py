@@ -6,10 +6,7 @@ import json
 import joblib
 import numpy as np
 import pandas as pd
-from flask import Flask, request, jsonify
-
-# Initialize Flask app for Vercel
-app = Flask(__name__)
+from http.server import BaseHTTPRequestHandler
 
 # Global variables for models
 models = {}
@@ -80,88 +77,105 @@ def preprocess_input_data(data, task_type='regression'):
     except Exception as e:
         raise Exception(f"Error preprocessing data: {str(e)}")
 
-# Load models when the function starts
-load_models_and_processors()
-
-@app.route('/api/predict', methods=['POST'])
-def predict():
-    """API endpoint for predictions"""
-    try:
-        # Get input data from request
-        input_data = request.json
-        
-        # Validate required fields (matching the actual dataset structure)
-        required_fields = [
-            'Latitude', 'Longitude', 'Vegetation_Type', 'Biodiversity_Index',
-            'Protected_Area_Status', 'Elevation_m', 'Slope_Degree', 'Soil_Type',
-            'Air_Quality_Index', 'Average_Temperature_C', 'Tourist_Attractions',
-            'Accessibility_Score', 'Tourist_Capacity_Limit'
-        ]
-        
-        missing_fields = [field for field in required_fields if field not in input_data]
-        if missing_fields:
-            return jsonify({'error': f'Missing required fields: {missing_fields}'}), 400
-        
-        # Add default values for fields that might be missing but are needed by the model
-        if 'Country' not in input_data:
-            input_data['Country'] = 'USA'  # Default country
-        if 'Flood_Risk_Index' not in input_data:
-            input_data['Flood_Risk_Index'] = 0.3  # Default moderate flood risk
-        if 'Drought_Risk_Index' not in input_data:
-            input_data['Drought_Risk_Index'] = 0.3  # Default moderate drought risk
-        if 'Temperature_C' not in input_data:
-            input_data['Temperature_C'] = input_data.get('Average_Temperature_C', 20.0)
-        if 'Annual_Rainfall_mm' not in input_data:
-            input_data['Annual_Rainfall_mm'] = 1000.0  # Default rainfall
-        if 'Soil_Erosion_Risk' not in input_data:
-            input_data['Soil_Erosion_Risk'] = 0.2  # Default low erosion risk
-        if 'Current_Tourist_Count' not in input_data:
-            input_data['Current_Tourist_Count'] = input_data.get('Tourist_Capacity_Limit', 500) * 0.6
-        if 'Human_Activity_Index' not in input_data:
-            input_data['Human_Activity_Index'] = 0.4  # Default moderate activity
-        if 'Conservation_Investment_USD' not in input_data:
-            input_data['Conservation_Investment_USD'] = 100000.0  # Default investment
-        if 'Climate_Risk_Score' not in input_data:
-            input_data['Climate_Risk_Score'] = 0.4  # Default moderate climate risk
-        
-        # Preprocess data for both models
-        regression_data = preprocess_input_data(input_data, 'regression')
-        classification_data = preprocess_input_data(input_data, 'classification')
-        
-        # Make predictions
-        climate_risk_score = models['regression'].predict(regression_data)[0]
-        flood_risk_prediction = models['classification'].predict(classification_data)[0]
-        flood_risk_proba = models['classification'].predict_proba(classification_data)[0]
-        
-        # Convert predictions to user-friendly format
-        risk_categories = ['Low', 'Medium', 'High']
-        flood_risk_category = risk_categories[flood_risk_prediction] if flood_risk_prediction < len(risk_categories) else 'Unknown'
-        
-        # Create probability distribution
-        risk_probabilities = {
-            risk_categories[i]: float(flood_risk_proba[i]) if i < len(flood_risk_proba) else 0.0
-            for i in range(len(risk_categories))
-        }
-        
-        results = {
-            'success': True,
-            'climate_risk_score': float(climate_risk_score),
-            'flood_risk_category': flood_risk_category,
-            'risk_probabilities': risk_probabilities,
-            'risk_level': 'Low' if climate_risk_score < 0.33 else 'Medium' if climate_risk_score < 0.67 else 'High'
-        }
-        
-        return jsonify(results)
-        
-    except Exception as e:
-        return jsonify({'error': str(e), 'success': False}), 500
-
-# For Vercel deployment
-def handler(request):
-    """Vercel serverless function handler"""
-    with app.test_request_context(request.url, method=request.method, headers=dict(request.headers), data=request.get_data()):
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
         try:
-            response = app.full_dispatch_request()
-            return response
+            # Load models if not already loaded
+            if not models:
+                success = load_models_and_processors()
+                if not success:
+                    self.send_error(500, 'Failed to load models')
+                    return
+            
+            # Read request body
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            input_data = json.loads(post_data.decode('utf-8'))
+            
+            # Validate required fields
+            required_fields = [
+                'Latitude', 'Longitude', 'Vegetation_Type', 'Biodiversity_Index',
+                'Protected_Area_Status', 'Elevation_m', 'Slope_Degree', 'Soil_Type',
+                'Air_Quality_Index', 'Average_Temperature_C', 'Tourist_Attractions',
+                'Accessibility_Score', 'Tourist_Capacity_Limit'
+            ]
+            
+            missing_fields = [field for field in required_fields if field not in input_data]
+            if missing_fields:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                response = {'error': f'Missing required fields: {missing_fields}'}
+                self.wfile.write(json.dumps(response).encode())
+                return
+            
+            # Add default values for fields that might be missing but are needed by the model
+            if 'Country' not in input_data:
+                input_data['Country'] = 'USA'
+            if 'Flood_Risk_Index' not in input_data:
+                input_data['Flood_Risk_Index'] = 0.3
+            if 'Drought_Risk_Index' not in input_data:
+                input_data['Drought_Risk_Index'] = 0.3
+            if 'Temperature_C' not in input_data:
+                input_data['Temperature_C'] = input_data.get('Average_Temperature_C', 20.0)
+            if 'Annual_Rainfall_mm' not in input_data:
+                input_data['Annual_Rainfall_mm'] = 1000.0
+            if 'Soil_Erosion_Risk' not in input_data:
+                input_data['Soil_Erosion_Risk'] = 0.2
+            if 'Current_Tourist_Count' not in input_data:
+                input_data['Current_Tourist_Count'] = input_data.get('Tourist_Capacity_Limit', 500) * 0.6
+            if 'Human_Activity_Index' not in input_data:
+                input_data['Human_Activity_Index'] = 0.4
+            if 'Conservation_Investment_USD' not in input_data:
+                input_data['Conservation_Investment_USD'] = 100000.0
+            if 'Climate_Risk_Score' not in input_data:
+                input_data['Climate_Risk_Score'] = 0.4
+            
+            # Preprocess data for both models
+            regression_data = preprocess_input_data(input_data, 'regression')
+            classification_data = preprocess_input_data(input_data, 'classification')
+            
+            # Make predictions
+            climate_risk_score = models['regression'].predict(regression_data)[0]
+            flood_risk_prediction = models['classification'].predict(classification_data)[0]
+            flood_risk_proba = models['classification'].predict_proba(classification_data)[0]
+            
+            # Convert predictions to user-friendly format
+            risk_categories = ['Low', 'Medium', 'High']
+            flood_risk_category = risk_categories[flood_risk_prediction] if flood_risk_prediction < len(risk_categories) else 'Unknown'
+            
+            # Create probability distribution
+            risk_probabilities = {
+                risk_categories[i]: float(flood_risk_proba[i]) if i < len(flood_risk_proba) else 0.0
+                for i in range(len(risk_categories))
+            }
+            
+            results = {
+                'success': True,
+                'climate_risk_score': float(climate_risk_score),
+                'flood_risk_category': flood_risk_category,
+                'risk_probabilities': risk_probabilities,
+                'risk_level': 'Low' if climate_risk_score < 0.33 else 'Medium' if climate_risk_score < 0.67 else 'High'
+            }
+            
+            # Send response
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(results).encode())
+            
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {'error': str(e), 'success': False}
+            self.wfile.write(json.dumps(response).encode())
+    
+    def do_OPTIONS(self):
+        # Handle CORS preflight
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
