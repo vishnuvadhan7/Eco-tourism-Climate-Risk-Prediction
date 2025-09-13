@@ -1,0 +1,18 @@
+{
+  "name": "eco-tourism-climate-risk-prediction",
+  "version": "1.0.0",
+  "description": "Eco-Tourism Climate Risk Prediction Web Interface",
+  "main": "public/index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step required'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
